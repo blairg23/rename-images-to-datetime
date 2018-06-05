@@ -28,16 +28,14 @@ if __name__ == '__main__':
 
         new_filename = date_taken.strftime('%Y-%m-%dT%H.%M.%S')
 
-        new_filename += extension
-
-        new_filepath = os.path.join(input_directory, new_filename)
+        new_filepath = os.path.join(input_directory, new_filename+extension)
 
         number = 0
 
         while os.path.exists(new_filepath):
             number += 1
-            new_filename, extension = os.path.splitext(new_filepath)
-            new_filename += '.' + str(number) + extension
-            new_filepath = os.path.join(input_directory, new_filename)
+            # new_filename, extension = os.path.splitext(new_filepath)
+            new_new_filename = new_filename + '.' + str(number)
+            new_filepath = os.path.join(input_directory, new_new_filename + extension)
 
         os.rename(filepath, new_filepath)

@@ -49,35 +49,49 @@ def main():
     print(date)
 
 if __name__ == '__main__':
+    # If True, will use the file creation datetime
+    # If False, will use a predefined format
+    using_file_creation_date = False
+    from_datetime_format = '%Y-%m-%dT%H.%M.%S.1'
+    to_datetime_format = '%Y-%m-%d %H.%M.%S' # Dropbox Camera Uploads naming format
+
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    glob_path = os.path.join(input_directory, '*.JPG')
+    file_formats = ['*.JPG', '*.dng', '*.jpg']
 
-    filepaths = glob.glob(glob_path)
 
-    for filepath in filepaths:
-        filename, extension = os.path.splitext(filepath)
 
-        try:
-            with PILimage.open(filepath) as img:
-                image = Worker(img)
-                image_datetime = image.date
+    for file_format in file_formats:
+        glob_path = os.path.join(input_directory, file_format)
 
-                date_taken = datetime.datetime.strptime(image_datetime, '%Y:%m:%d %H:%M:%S')
+        filepaths = glob.glob(glob_path)
 
-                new_filename = date_taken.strftime('%Y-%m-%dT%H.%M.%S')
+        for filepath in filepaths:
+            filename, extension = os.path.splitext(filepath)
+            filename = os.path.basename(filename)
+
+            try:
+                if using_file_creation_date:
+                    with PILimage.open(filepath) as img:
+                        image = Worker(img)
+                        image_datetime = image.date
+                        date_taken = datetime.datetime.strptime(image_datetime, '%Y:%m:%d %H:%M:%S')
+                else:
+                    date_taken = datetime.datetime.strptime(filename, from_datetime_format)
+
+                new_filename = date_taken.strftime(to_datetime_format)
                 
                 new_filepath = os.path.join(input_directory, new_filename+extension)
 
-            number = 0
+                number = 0
 
-            while os.path.exists(new_filepath):
-                number += 1
-                # new_filename, extension = os.path.splitext(new_filepath)
-                new_new_filename = new_filename + '.' + str(number)
-                new_filepath = os.path.join(input_directory, new_new_filename + extension)
+                while os.path.exists(new_filepath):
+                    number += 1
+                    # new_filename, extension = os.path.splitext(new_filepath)
+                    new_new_filename = new_filename + '.' + str(number)
+                    new_filepath = os.path.join(input_directory, new_new_filename + extension)
 
-            os.rename(filepath, new_filepath)
+                os.rename(filepath, new_filepath)
 
-        except Exception as e:
-                print(e)
+            except Exception as e:
+                    print(e)

@@ -52,12 +52,12 @@ if __name__ == '__main__':
     # If True, will use the file creation datetime
     # If False, will use a predefined format
     using_file_creation_date = False
-    from_datetime_format = '%Y-%m-%dT%H.%M.%S.1'
+    from_datetime_format = '%Y%m%d_%H%M%S'
     to_datetime_format = '%Y-%m-%d %H.%M.%S' # Dropbox Camera Uploads naming format
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.JPG', '*.dng', '*.jpg']
+    file_formats = ['*.JPG', '*.dng', '*.jpg', '*.mp4']
 
 
 

@@ -9,6 +9,7 @@ try:
     import os
     import glob
     import datetime
+    import json
 except ImportError as err:
     exit(err)
 
@@ -40,7 +41,15 @@ class Worker(object):
 
     def get_date_time(self):
         if 'DateTime' in self.exif_data:
-            date_and_time = self.exif_data['DateTime']
+            print('exif:', self.exif_data)
+            print('-------\n')
+            # print(json.dumps(self.exif_data, indent=4))
+            date_and_time = self.exif_data.get('DateTime')
+            print('date_and_time:', date_and_time)
+            # For those weird cases where midnight is portrayed as 24:00:00 instead of 00:00:00
+            date_and_time = date_and_time.replace(' 24:', ' 00:')
+            date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
+            print('date_and_time:', date_and_time)
             return date_and_time 
 
 
@@ -51,13 +60,13 @@ def main():
 if __name__ == '__main__':
     # If True, will use the file creation datetime
     # If False, will use a predefined format
-    using_file_creation_date = False
-    from_datetime_format = '%Y-%m-%dT%H.%M.%S.1'
+    using_file_creation_date = True
+    from_datetime_format = '%Y%m%d_%H%M%S'
     to_datetime_format = '%Y-%m-%d %H.%M.%S' # Dropbox Camera Uploads naming format
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.JPG', '*.dng', '*.jpg']
+    file_formats = ['*.JPG', '*.dng', '*.jpg', '*.mp4']
 
 
 
@@ -74,8 +83,7 @@ if __name__ == '__main__':
                 if using_file_creation_date:
                     with PILimage.open(filepath) as img:
                         image = Worker(img)
-                        image_datetime = image.date
-                        date_taken = datetime.datetime.strptime(image_datetime, '%Y:%m:%d %H:%M:%S')
+                        date_taken = image.date
                 else:
                     date_taken = datetime.datetime.strptime(filename, from_datetime_format)
 
@@ -94,4 +102,6 @@ if __name__ == '__main__':
                 os.rename(filepath, new_filepath)
 
             except Exception as e:
+                    print('filename:', filename)
                     print(e)
+                    print('\n')

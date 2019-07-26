@@ -36,8 +36,8 @@ class Worker(object):
                     exif_data[decoded] = gps_data
                 else:
                     exif_data[decoded] = value
-        self.exif_data = exif_data
-        # return exif_data 
+        # self._exif_data = exif_data
+        return exif_data
 
     def get_date_time(self):
         if 'DateTime' in self.exif_data:
@@ -49,31 +49,45 @@ class Worker(object):
             # For those weird cases where midnight is portrayed as 24:00:00 instead of 00:00:00
             date_and_time = date_and_time.replace(' 24:', ' 00:')
             date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
-            print('date_and_time:', date_and_time)
-            return date_and_time 
+
+            if self._debug:
+                print('date_and_time:', date_and_time)
+
+            return date_and_time
+        else:
+            print('DateTime not found...')
+            if self._debug:
+                print('exif:', self._exif_data)
 
 
 def main():
     date = image.date
     print(date)
 
+
 if __name__ == '__main__':
     # If True, will use the file creation datetime
     # If False, will use a predefined format
+    DEBUG = True
     using_file_creation_date = True
     from_datetime_format = '%Y%m%d_%H%M%S'
-    to_datetime_format = '%Y-%m-%d %H.%M.%S' # Dropbox Camera Uploads naming format
+    to_datetime_format = '%Y-%m-%d %H.%M.%S'  # Dropbox Camera Uploads naming format
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.JPG', '*.dng', '*.jpg', '*.mp4']
+    file_formats = ['*.jpg', '*.png', '*.mp4']
 
-
-
+    print('--------------------------------------------------------')
     for file_format in file_formats:
+        print('FILE FORMAT:', file_format)
         glob_path = os.path.join(input_directory, file_format)
-
         filepaths = glob.glob(glob_path)
+
+        if DEBUG:
+            print('GLOB PATH:', glob_path)
+            print('FILEPATHS:', filepaths)
+
+        filepaths_to_rename = {}
 
         for filepath in filepaths:
             filename, extension = os.path.splitext(filepath)
@@ -82,8 +96,8 @@ if __name__ == '__main__':
             try:
                 if using_file_creation_date:
                     with PILimage.open(filepath) as img:
-                        image = Worker(img)
-                        date_taken = image.date
+                        image = Worker(img, debug=DEBUG)
+                        date_taken = image._date
                 else:
                     date_taken = datetime.datetime.strptime(filename, from_datetime_format)
 
@@ -93,15 +107,28 @@ if __name__ == '__main__':
 
                 number = 0
 
-                while os.path.exists(new_filepath):
+                if DEBUG:
+                    print('new_filepath:', new_filepath)
+                    print('isfile:', os.path.isfile(new_filepath))
+                    print('exists:', os.path.exists(new_filepath))
+
+                while os.path.isfile(new_filepath):
                     number += 1
                     # new_filename, extension = os.path.splitext(new_filepath)
                     new_new_filename = new_filename + '.' + str(number)
                     new_filepath = os.path.join(input_directory, new_new_filename + extension)
 
+                print(f'Renaming {filepath} to {new_filepath}')
+
                 os.rename(filepath, new_filepath)
 
             except Exception as e:
-                    print('filename:', filename)
-                    print(e)
-                    print('\n')
+                print('filename:', filename)
+                print(e)
+                print('\n')
+
+        # print(filepaths_to_rename)
+        # for filepath, new_filepath in filepaths_to_rename.items():
+        #     print(f'Renaming {filepath} to {new_filepath}')
+        #     os.rename(filepath, new_filepath)
+        print('\n--------------------------------------------------------')

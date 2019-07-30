@@ -17,7 +17,7 @@ except ImportError as err:
 class Worker(object):
     def __init__(self, img):
         self.img = img
-        self.get_exif_data()
+        self.exif_data = self.get_exif_data()
         self.date =self.get_date_time()
         super(Worker, self).__init__()
 
@@ -40,6 +40,7 @@ class Worker(object):
         return exif_data
 
     def get_date_time(self):
+        debug = True
         if 'DateTime' in self.exif_data:
             print('exif:', self.exif_data)
             print('-------\n')
@@ -50,14 +51,14 @@ class Worker(object):
             date_and_time = date_and_time.replace(' 24:', ' 00:')
             date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
 
-            if self._debug:
+            if debug:
                 print('date_and_time:', date_and_time)
 
             return date_and_time
         else:
             print('DateTime not found...')
-            if self._debug:
-                print('exif:', self._exif_data)
+            if debug:
+                print('exif:', self.exif_data)
 
 
 def main():
@@ -75,7 +76,7 @@ if __name__ == '__main__':
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.jpg', '*.png', '*.mp4']
+    file_formats = ['*.jpg', '*.png', '*.dng', '*.mp4']
 
     print('--------------------------------------------------------')
     for file_format in file_formats:
@@ -96,8 +97,8 @@ if __name__ == '__main__':
             try:
                 if using_file_creation_date:
                     with PILimage.open(filepath) as img:
-                        image = Worker(img, debug=DEBUG)
-                        date_taken = image._date
+                        image = Worker(img)
+                        date_taken = image.date
                 else:
                     date_taken = datetime.datetime.strptime(filename, from_datetime_format)
 
@@ -112,11 +113,25 @@ if __name__ == '__main__':
                     print('isfile:', os.path.isfile(new_filepath))
                     print('exists:', os.path.exists(new_filepath))
 
-                while os.path.isfile(new_filepath):
-                    number += 1
-                    # new_filename, extension = os.path.splitext(new_filepath)
-                    new_new_filename = new_filename + '.' + str(number)
-                    new_filepath = os.path.join(input_directory, new_new_filename + extension)
+                filepath_before_renaming = new_filepath
+                # if file exists before we name it,
+                file_does_exist = os.path.isfile(new_filepath)
+                if file_does_exist:
+                    # then we need to rename the file until we have no duplicate filenames
+                    while os.path.isfile(new_filepath):
+                        print(f'{new_filepath} already exists.')
+                        number += 1
+                        new_new_filename = new_filename + '.' + str(number)
+                        new_filepath = os.path.join(input_directory, new_new_filename + extension)
+                        print(f'Checking if {new_filepath} is in use.')
+                    # however, if we rename it and it no longer exists,
+                    file_still_exists = os.path.isfile(filepath_before_renaming)
+                    if not file_still_exists:
+                        print(f'The file no longer exists, reverting.')
+                        # we'll need to revert that rename.
+                        new_filepath = filepath_before_renaming
+                        print(f'Reverted to {new_filepath}')
+                    # This is caused by rerunning this script on files that have already been renamed.
 
                 print(f'Renaming {filepath} to {new_filepath}')
 

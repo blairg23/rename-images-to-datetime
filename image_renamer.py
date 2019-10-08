@@ -51,22 +51,26 @@ def main():
 if __name__ == '__main__':
     # If True, will use the file creation datetime
     # If False, will use a predefined format
-    using_file_creation_date = False
+    using_file_creation_date = True
     from_datetime_format = '%Y%m%d_%H%M%S'
     to_datetime_format = '%Y-%m-%d %H.%M.%S' # Dropbox Camera Uploads naming format
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.JPG', '*.dng', '*.jpg', '*.mp4']
+    file_formats = ['*.dng', '*.jpg', '*.mp4']
 
 
 
     for file_format in file_formats:
+        print(f'Looking for {file_format} files')
         glob_path = os.path.join(input_directory, file_format)
 
         filepaths = glob.glob(glob_path)
 
+        print(f'Found {len(filepaths)} files')
+
         for filepath in filepaths:
+            print(f'Processing {filepath}')
             filename, extension = os.path.splitext(filepath)
             filename = os.path.basename(filename)
 
@@ -85,12 +89,15 @@ if __name__ == '__main__':
 
                 number = 0
 
-                while os.path.exists(new_filepath):
-                    number += 1
-                    # new_filename, extension = os.path.splitext(new_filepath)
-                    new_new_filename = new_filename + '.' + str(number)
-                    new_filepath = os.path.join(input_directory, new_new_filename + extension)
+                if os.path.exists(new_filepath):
+                    while os.path.exists(new_filepath):
+                        print(f'{new_filepath} exists')
+                        number += 1
+                        # new_filename, extension = os.path.splitext(new_filepath)
+                        new_new_filename = new_filename + '.' + str(number)
+                        new_filepath = os.path.join(input_directory, new_new_filename + extension)
 
+                print(f'Creating {new_filepath}\n')
                 os.rename(filepath, new_filepath)
 
             except Exception as e:

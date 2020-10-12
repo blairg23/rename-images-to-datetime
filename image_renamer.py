@@ -2,6 +2,7 @@
 Stolen straight from https://stackoverflow.com/a/51337247/1224827
 '''
 try:
+    import exifread
     import PIL
     import PIL.Image as PILimage
     from PIL import ImageDraw, ImageFont, ImageEnhance
@@ -14,12 +15,12 @@ except ImportError as err:
     exit(err)
 
 
-class Worker(object):
+class PILWorker(object):
     def __init__(self, img):
         self.img = img
         self.exif_data = self.get_exif_data()
         self.date =self.get_date_time()
-        super(Worker, self).__init__()
+        super(PILWorker, self).__init__()
 
     def get_exif_data(self):
         exif_data = {}
@@ -62,13 +63,59 @@ class Worker(object):
                 # print('exif:', self.exif_data)
 
 
+class ExifReadWorker(object):
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.exif_data = self.get_exif_data()
+        self.date =self.get_date_time()
+        super(ExifReadWorker, self).__init__()
+
+    def get_exif_data(self):
+        exif_data = {}
+        with open(self.filepath, 'rb') as infile:
+            tags = exifread.process_file(infile)
+            for tag, value in tags.items():
+                decoded = TAGS.get(tag, tag)
+                if decoded == "GPSInfo":
+                    gps_data = {}
+                    for t in value:
+                        sub_decoded = GPSTAGS.get(t, t)
+                        gps_data[sub_decoded] = value[t]
+
+                    exif_data[decoded] = gps_data
+                else:
+                    exif_data[decoded] = str(value)
+        # self._exif_data = exif_data
+        return exif_data
+
+    def get_date_time(self, datetime_key='Image DateTime'):
+        debug = False
+        if datetime_key in self.exif_data:
+            if debug:
+                print('exif:', self.exif_data)
+                print('-------\n')
+            date_and_time = self.exif_data.get(datetime_key)
+            print('date_and_time:', date_and_time)
+            # For those weird cases where midnight is portrayed as 24:00:00 instead of 00:00:00
+            date_and_time = date_and_time.replace(' 24:', ' 00:')
+            date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
+
+            if debug:
+                print('date_and_time:', date_and_time)
+
+            return date_and_time
+        else:
+            if debug:
+                print('DateTime not found...')
+
+
 def main():
     date = image.date
     print(date)
 
 
 if __name__ == '__main__':
-    DEBUG = True
+    DEBUG = False
     # If True, will use the file creation datetime
     # If False, will use a predefined format
     using_file_creation_date = True
@@ -77,7 +124,7 @@ if __name__ == '__main__':
 
     input_directory = os.path.join(os.getcwd(), 'input')
 
-    file_formats = ['*.jpg', '*.png', '*.dng', '*.mp4']
+    file_formats = ['*.jpg', '*.png', '*.dng', '*.mp4', '*.mov', '*.NEF']
 
     print('--------------------------------------------------------')
     for file_format in file_formats:
@@ -101,9 +148,16 @@ if __name__ == '__main__':
 
             try:
                 if using_file_creation_date:
-                    with PILimage.open(filepath) as img:
-                        image = Worker(img)
-                        date_taken = image.date
+                    image = ExifReadWorker(filepath)
+                    date_taken = image.date
+
+                    # TODO: Deprecate this bit since it doesn't work with NEF files:
+                    # with PILimage.open(filepath) as img:
+                    #     image = PILWorker(img)
+                    #     print('image: ', image)
+                    #     date_taken = image.date
+                    #     print('date: ', date_taken)
+                    #     sys.exit()
                 else:
                     date_taken = datetime.datetime.strptime(filename, from_datetime_format)
 

@@ -1,6 +1,6 @@
-'''
+"""
 Stolen straight from https://stackoverflow.com/a/51337247/1224827
-'''
+"""
 try:
     import exifread
     import PIL
@@ -11,15 +11,16 @@ try:
     import glob
     import datetime
     import json
+    import sys
 except ImportError as err:
     exit(err)
 
 
 class PILWorker(object):
-    def __init__(self, img):
+    def __init__(self, img, debug):
         self.img = img
         self.exif_data = self.get_exif_data()
-        self.date =self.get_date_time()
+        self.date =self.get_date_time(debug=debug)
         super(PILWorker, self).__init__()
 
     def get_exif_data(self):
@@ -40,39 +41,38 @@ class PILWorker(object):
         # self._exif_data = exif_data
         return exif_data
 
-    def get_date_time(self):
-        debug = False
-        if 'DateTime' in self.exif_data:
+    def get_date_time(self, debug=False):
+        if "DateTime" in self.exif_data:
             if debug:
-                print('exif:', self.exif_data)
-                print('-------\n')
+                print("exif:", self.exif_data)
+                print("-------\n")
             # print(json.dumps(self.exif_data, indent=4))
-            date_and_time = self.exif_data.get('DateTime')
-            print('date_and_time:', date_and_time)
+            date_and_time = self.exif_data.get("DateTime")
+            print("date_and_time:", date_and_time)
             # For those weird cases where midnight is portrayed as 24:00:00 instead of 00:00:00
-            date_and_time = date_and_time.replace(' 24:', ' 00:')
-            date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
+            date_and_time = date_and_time.replace(" 24:", " 00:")
+            date_and_time = datetime.datetime.strptime(date_and_time, "%Y:%m:%d %H:%M:%S")
 
             if debug:
-                print('date_and_time:', date_and_time)
+                print("date_and_time:", date_and_time)
 
             return date_and_time
         else:
             if debug:
-                print('DateTime not found...')
-                # print('exif:', self.exif_data)
+                print("DateTime not found...")
+                # print("exif:", self.exif_data)
 
 
 class ExifReadWorker(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, debug):
         self.filepath = filepath
         self.exif_data = self.get_exif_data()
-        self.date =self.get_date_time()
+        self.date =self.get_date_time(debug=debug)
         super(ExifReadWorker, self).__init__()
 
     def get_exif_data(self):
         exif_data = {}
-        with open(self.filepath, 'rb') as infile:
+        with open(self.filepath, "rb") as infile:
             tags = exifread.process_file(infile)
             for tag, value in tags.items():
                 decoded = TAGS.get(tag, tag)
@@ -88,25 +88,24 @@ class ExifReadWorker(object):
         # self._exif_data = exif_data
         return exif_data
 
-    def get_date_time(self, datetime_key='Image DateTime'):
-        debug = False
+    def get_date_time(self, datetime_key="Image DateTime", debug=False):
         if datetime_key in self.exif_data:
             if debug:
-                print('exif:', self.exif_data)
-                print('-------\n')
+                print("exif:", self.exif_data)
+                print("-------\n")
             date_and_time = self.exif_data.get(datetime_key)
-            print('date_and_time:', date_and_time)
+            print("date_and_time:", date_and_time)
             # For those weird cases where midnight is portrayed as 24:00:00 instead of 00:00:00
-            date_and_time = date_and_time.replace(' 24:', ' 00:')
-            date_and_time = datetime.datetime.strptime(date_and_time, '%Y:%m:%d %H:%M:%S')
+            date_and_time = date_and_time.replace(" 24:", " 00:")
+            date_and_time = datetime.datetime.strptime(date_and_time, "%Y:%m:%d %H:%M:%S")
 
             if debug:
-                print('date_and_time:', date_and_time)
+                print("date_and_time:", date_and_time)
 
             return date_and_time
         else:
             if debug:
-                print('DateTime not found...')
+                print("DateTime not found...")
 
 
 def main():
@@ -114,49 +113,51 @@ def main():
     print(date)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     DEBUG = False
-    # If True, will use the file creation datetime
-    # If False, will use a predefined format
-    using_file_creation_date = True
-    from_datetime_format = '%Y%m%d_%H%M%S'
-    to_datetime_format = '%Y-%m-%d %H.%M.%S'  # Dropbox Camera Uploads naming format
+    EXIF_DEBUG = False
+    from_datetime_format = "%Y%m%d_%H%M%S"
+    to_datetime_format = "%Y-%m-%d %H.%M.%S"  # Dropbox Camera Uploads naming format
 
-    input_directory = os.path.join(os.getcwd(), 'input')
+    input_directory = os.path.join(os.getcwd(), "input")
 
-    file_formats = ['*.jpg', '*.png', '*.dng', '*.mp4', '*.mov', '*.NEF']
+    image_file_formats = ["*.jpg", "*.png", "*.dng", "*.NEF"]
+    movie_file_formats = ["*.mp4", "*.mov"]
 
-    print('--------------------------------------------------------')
-    for file_format in file_formats:
+    print("--------------------------------------------------------")
+    for file_format in (image_file_formats + movie_file_formats):
         if DEBUG:
-            print(f'Looking for {file_format} files')
+            print(f"Looking for {file_format} files")
 
         glob_path = os.path.join(input_directory, file_format)
         filepaths = glob.glob(glob_path)
 
         if DEBUG:
-            print(f'Found {len(filepaths)} files')
-            print('GLOB PATH:', glob_path)
-            print('FILEPATHS:', filepaths)
+            print(f"Found {len(filepaths)} files")
+            print("GLOB PATH:", glob_path)
+            # print("FILEPATHS:", filepaths)
 
         filepaths_to_rename = {}
 
         for filepath in filepaths:
-            print(f'Processing {filepath}')
+            print(f"Processing {filepath}")
             filename, extension = os.path.splitext(filepath)
             filename = os.path.basename(filename)
 
             try:
-                if using_file_creation_date:
-                    image = ExifReadWorker(filepath)
+                if DEBUG:
+                    print("extension:", extension)
+                    print("extension in image_file_formats: ", f"*{extension}" in image_file_formats)
+                if f"*{extension}" in image_file_formats: 
+                    image = ExifReadWorker(filepath, debug=EXIF_DEBUG)
                     date_taken = image.date
 
-                    # TODO: Deprecate this bit since it doesn't work with NEF files:
+                    # TODO: Deprecate this bit since it doesn"t work with NEF files:
                     # with PILimage.open(filepath) as img:
                     #     image = PILWorker(img)
-                    #     print('image: ', image)
+                    #     print("image: ", image)
                     #     date_taken = image.date
-                    #     print('date: ', date_taken)
+                    #     print("date: ", date_taken)
                     #     sys.exit()
                 else:
                     date_taken = datetime.datetime.strptime(filename, from_datetime_format)
@@ -168,9 +169,9 @@ if __name__ == '__main__':
                 number = 0
 
                 if DEBUG:
-                    print('new_filepath:', new_filepath)
-                    print('isfile:', os.path.isfile(new_filepath))
-                    print('exists:', os.path.exists(new_filepath))
+                    print("new_filepath:", new_filepath)
+                    print("isfile:", os.path.isfile(new_filepath))
+                    print("exists:", os.path.exists(new_filepath))
 
                 filepath_before_renaming = new_filepath
                 # if file exists before we name it,
@@ -178,31 +179,34 @@ if __name__ == '__main__':
                 if file_does_exist:
                     # then we need to rename the file until we have no duplicate filenames
                     while os.path.isfile(new_filepath):
-                        print(f'{new_filepath} already exists.')
+                        print(f"{new_filepath} already exists.")
                         number += 1
-                        new_new_filename = new_filename + '.' + str(number)
+                        new_new_filename = new_filename + "." + str(number)
                         new_filepath = os.path.join(input_directory, new_new_filename + extension)
-                        print(f'Checking if {new_filepath} is in use.')
+                        print(f"Checking if {new_filepath} is in use.")
+
+                    if not DEBUG:
+                        print(f"Renaming {filepath} to {new_filepath}\n")
+                        os.rename(filepath, new_filepath)
+
                     # however, if we rename it and it no longer exists,
                     file_still_exists = os.path.isfile(filepath_before_renaming)
                     if not file_still_exists:
-                        print(f'The file no longer exists, reverting.')
-                        # we'll need to revert that rename.
-                        new_filepath = filepath_before_renaming
-                        print(f'Reverted to {new_filepath}')
+                        print(f"The file no longer exists, reverting {new_filepath} to {filepath_before_renaming}.")
+                        # we"ll need to revert that rename.
+                        if not DEBUG:
+                            print(f"Renaming {filepath} to {new_filepath}\n")
+                            os.rename(new_filepath, filepath_before_renaming)
+                        print(f"Reverted to {filepath_before_renaming}")
                     # This is caused by rerunning this script on files that have already been renamed.
 
-                print(f'Renaming {filepath} to {new_filepath}\n')
-
-                os.rename(filepath, new_filepath)
+                if not DEBUG:
+                    print(f"Renaming {filepath} to {new_filepath}\n")
+                    os.rename(filepath, new_filepath)
 
             except Exception as e:
-                print('filename:', filename)
+                print("filename:", filename)
                 print(e)
-                print('\n')
+                print("\n")
 
-        # print(filepaths_to_rename)
-        # for filepath, new_filepath in filepaths_to_rename.items():
-        #     print(f'Renaming {filepath} to {new_filepath}')
-        #     os.rename(filepath, new_filepath)
-        print('\n--------------------------------------------------------')
+        print("\n--------------------------------------------------------")

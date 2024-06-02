@@ -195,14 +195,15 @@ if __name__ == "__main__":
                         print(f"The file no longer exists, reverting {new_filepath} to {filepath_before_renaming}.")
                         # we"ll need to revert that rename.
                         if not DEBUG:
-                            print(f"Renaming {filepath} to {new_filepath}\n")
+                            # new_filepath = filepath_before_renaming
+                            print(f"Renaming {new_filepath} to {filepath_before_renaming}\n")
                             os.rename(new_filepath, filepath_before_renaming)
                         print(f"Reverted to {filepath_before_renaming}")
                     # This is caused by rerunning this script on files that have already been renamed.
-
-                if not DEBUG:
-                    print(f"Renaming {filepath} to {new_filepath}\n")
-                    os.rename(filepath, new_filepath)
+                else:
+                    if not DEBUG:
+                        print(f"Renaming {filepath} to {new_filepath}\n")
+                        os.rename(filepath, new_filepath)
 
             except Exception as e:
                 print("filename:", filename)

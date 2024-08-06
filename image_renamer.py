@@ -109,11 +109,6 @@ class ExifReadWorker(object):
 
 
 def main():
-    date = image.date
-    print(date)
-
-
-if __name__ == "__main__":
     DEBUG = False
     EXIF_DEBUG = False
     from_datetime_format = "%Y%m%d_%H%M%S"
@@ -211,3 +206,8 @@ if __name__ == "__main__":
                 print("\n")
 
         print("\n--------------------------------------------------------")
+
+
+
+if __name__ == "__main__":
+    main()

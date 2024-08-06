@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "rename-images-to-datetime"
+version = "0.1.0"
+description = "Renames images and movie, given a timestamp in the title or the actual timestamp of the image."
+
+license = "MIT"
+
+authors = [
+    "Blairg23 <blairg23@gmail.com>"
+]
+
+repository = "https://github.com/blairg23/rename-images-to-datetime"
+homepage = "https://example.com"
+
+# README file(s) are used as the package description
+readme = ["README.md", "LICENSE"]
+
+# Keywords (translated to tags on the package index)
+keywords = ["image", "filename", "manipulation"]
+
+[tool.poetry.dependencies]
+# Compatible Python versions
+python = ">=3.8"
+ExifRead= "^2.3.1"
+Pillow = ">=7.2.0"
+
+# Python-style entrypoints and scripts are easily expressed
+[tool.poetry.scripts]
+image-renamer = "image_renamer:main"
